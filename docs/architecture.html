@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture - terraform-gcp-cloud-run</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0b0c0b;color:#f5f2eb;font-family:'SF Mono','Fira Code','Cascadia Code',Consolas,monospace;line-height:1.6;padding:0}
+a{color:#c8420a;text-decoration:none}a:hover{text-decoration:underline}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+.badge-bar{background:#111;border-bottom:2px solid #c8420a;padding:0.75rem 2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.badge-bar img{height:28px}
+.badge-bar span{font-size:0.85rem;color:#aaa}
+h1{font-size:2rem;color:#c8420a;margin:1.5rem 0 0.5rem;border-bottom:1px solid #222;padding-bottom:0.5rem}
+h2{font-size:1.4rem;color:#c8420a;margin:2rem 0 1rem;border-bottom:1px solid #1a1a1a;padding-bottom:0.4rem}
+h3{font-size:1.1rem;color:#e8e0d4;margin:1.2rem 0 0.6rem}
+p,li{font-size:0.95rem;color:#ccc}
+ul{padding-left:1.5rem;margin:0.5rem 0}
+li{margin:0.3rem 0}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1rem 0}
+.card{background:#141514;border:1px solid #222;border-radius:8px;padding:1.2rem;transition:border-color 0.2s}.card:hover{border-color:#c8420a}
+.card h3{margin:0 0 0.5rem;font-size:1rem;color:#c8420a}
+.card p{font-size:0.85rem;color:#aaa;margin:0}
+.arch-diagram{background:#111;border:1px solid #222;border-radius:8px;padding:2rem;margin:1.5rem 0;overflow-x:auto}
+.flow{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:0.5rem}
+.flow-box{background:#1a1b1a;border:2px solid #333;border-radius:6px;padding:0.8rem 1.2rem;text-align:center;font-size:0.85rem;min-width:130px}
+.flow-box.accent{border-color:#c8420a;color:#c8420a;font-weight:bold}
+.flow-box.green{border-color:#34a853;color:#34a853}
+.flow-box.blue{border-color:#4285f4;color:#4285f4}
+.flow-box.purple{border-color:#9c27b0;color:#9c27b0}
+.flow-box.yellow{border-color:#fbbc04;color:#fbbc04}
+.flow-arrow{color:#555;font-size:1.5rem;display:flex;align-items:center;padding:0 0.2rem}
+.flow-col{display:flex;flex-direction:column;gap:0.5rem;align-items:center}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem}
+th{background:#1a1b1a;color:#c8420a;padding:0.6rem 0.8rem;text-align:left;border:1px solid #222}
+td{padding:0.6rem 0.8rem;border:1px solid #222;color:#ccc}
+tr:nth-child(even){background:#111}
+code{background:#1a1b1a;padding:0.15rem 0.4rem;border-radius:3px;font-size:0.85rem;color:#e8e0d4}
+pre{background:#111;border:1px solid #222;border-radius:6px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{background:none;padding:0}
+.checklist{list-style:none;padding-left:0}
+.checklist li{padding:0.4rem 0;padding-left:1.8rem;position:relative}
+.checklist li::before{content:'[ ]';position:absolute;left:0;color:#c8420a;font-weight:bold}
+.section{margin:2rem 0}
+.footer{border-top:1px solid #222;margin-top:3rem;padding-top:1rem;text-align:center;font-size:0.8rem;color:#555}
+.exec-summary{background:#141514;border-left:4px solid #c8420a;padding:1.2rem 1.5rem;margin:1rem 0;border-radius:0 6px 6px 0}
+.exec-summary p{color:#ccc;font-size:0.95rem}
+</style>
+</head>
+<body>
+<div class="badge-bar">
+<img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=flat&logo=googlecloud&logoColor=white" alt="GCP">
+<img src="https://img.shields.io/badge/Terraform-7B42BC?style=flat&logo=terraform&logoColor=white" alt="Terraform">
+<span>terraform-gcp-cloud-run</span>
+<span style="margin-left:auto;color:#555">Architecture Document</span>
+</div>
+<div class="container">
+
+<h1>Cloud Run Module</h1>
+
+<div class="section">
+<h2>Executive Summary</h2>
+<div class="exec-summary">
+<p>A Terraform module for deploying serverless container workloads on Google Cloud Run v2. Manages services with auto-scaling (0 to 100 instances), jobs with parallelism and retry policies, VPC Access Connectors for private network connectivity, Secret Manager integration for secure environment variables, IAM bindings for authenticated/unauthenticated access, and custom domain mappings. Runs on 2nd-gen execution environment with configurable CPU, memory, concurrency, and timeout settings.</p>
+</div>
+</div>
+
+<div class="section">
+<h2>Overview</h2>
+<div class="card-grid">
+<div class="card"><h3>Provider</h3><p>google / google-beta >= 5.10</p></div>
+<div class="card"><h3>Terraform</h3><p>>= 1.5.0</p></div>
+<div class="card"><h3>Resources</h3><p>4 (Services, Jobs, VPC Connectors, IAM)</p></div>
+<div class="card"><h3>Scaling</h3><p>0-100 instances, 80 concurrent requests</p></div>
+<div class="card"><h3>Runtime</h3><p>Gen2 execution environment</p></div>
+<div class="card"><h3>Secrets</h3><p>Secret Manager integration</p></div>
+</div>
+</div>
+
+<div class="section">
+<h2>Architecture Diagram</h2>
+<div class="arch-diagram">
+<div class="flow">
+<div class="flow-col">
+<div class="flow-box">External Users</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box yellow">Custom Domain</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box green">Cloud Run v2 Services</div>
+</div>
+</div>
+<br>
+<div class="flow">
+<div class="flow-col">
+<div class="flow-box green">Services</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box blue">VPC Access Connector</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box">Private VPC Resources</div>
+</div>
+</div>
+<br>
+<div class="flow">
+<div class="flow-col">
+<div class="flow-box green">Services</div>
+<div class="flow-box green">Jobs</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box purple">Secret Manager</div>
+</div>
+<div class="flow-arrow" style="margin-left:2rem">|</div>
+<div class="flow-col">
+<div class="flow-box accent">IAM Bindings</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box">roles/run.invoker</div>
+<div class="flow-box">allUsers (opt-in)</div>
+</div>
+</div>
+<br>
+<div class="flow">
+<div class="flow-col">
+<div class="flow-box green">Cloud Run v2 Jobs</div>
+</div>
+<div class="flow-arrow">&#9654;</div>
+<div class="flow-col">
+<div class="flow-box yellow">Task Count + Parallelism</div>
+<div class="flow-box yellow">Max Retries</div>
+<div class="flow-box yellow">Configurable Timeout</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h2>Component Breakdown</h2>
+<h3>google_cloud_run_v2_service.this</h3>
+<p>Cloud Run v2 services with configurable container image, port (default 8080), CPU/memory limits, auto-scaling (min 0, max 100), 80 concurrent requests per instance, Gen2 execution environment, environment variables (plain and secret-backed), VPC connector for private egress, and ingress controls (ALL, INTERNAL_ONLY, INTERNAL_AND_CLOUD_LOAD_BALANCING).</p>
+<h3>google_cloud_run_v2_job.this</h3>
+<p>Cloud Run v2 jobs for batch workloads with task count, parallelism, max retries (default 3), configurable timeout, VPC connector support, and environment variables.</p>
+<h3>google_vpc_access_connector.this</h3>
+<p>Serverless VPC Access connectors with configurable machine type (default e2-micro), instance scaling (2-3), throughput limits (200-300 Mbps), and network/CIDR configuration for private connectivity.</p>
+<h3>google_cloud_run_service_iam_member.allow_unauthenticated</h3>
+<p>Conditionally grants <code>roles/run.invoker</code> to <code>allUsers</code> when <code>allow_unauthenticated = true</code> on a per-service basis.</p>
+</div>
+
+<div class="section">
+<h2>Data Flow</h2>
+<ul>
+<li><strong>HTTP Requests:</strong> External traffic arrives via HTTPS, optionally through custom domain mappings, and is routed to Cloud Run services.</li>
+<li><strong>Service Processing:</strong> Containers handle requests with auto-scaling from 0 (scale-to-zero) to 100 instances based on demand.</li>
+<li><strong>Private Access:</strong> Services connect to VPC resources (Cloud SQL, Memorystore, internal APIs) through VPC Access Connectors with PRIVATE_RANGES_ONLY or ALL_TRAFFIC egress.</li>
+<li><strong>Secrets:</strong> Sensitive configuration is injected from Secret Manager as environment variables at container startup.</li>
+<li><strong>Jobs:</strong> Batch workloads execute with parallelism, retry on failure, and terminate after timeout.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>Security Controls</h2>
+<table>
+<tr><th>Control</th><th>Implementation</th></tr>
+<tr><td>Authentication</td><td>IAM-based invocation; unauthenticated access is opt-in per service</td></tr>
+<tr><td>Secret Management</td><td>Secret Manager environment variables (secret + version reference)</td></tr>
+<tr><td>Network Isolation</td><td>VPC Access Connector for private egress; ingress controls (ALL, INTERNAL_ONLY)</td></tr>
+<tr><td>Service Identity</td><td>Custom service account per service/job for least-privilege access</td></tr>
+<tr><td>HTTPS Enforcement</td><td>All Cloud Run endpoints are HTTPS by default</td></tr>
+<tr><td>Resource Limits</td><td>CPU/memory limits prevent resource exhaustion</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Industry Adaptation</h2>
+<ul>
+<li><strong>SaaS / Microservices:</strong> Multiple services with independent scaling, VPC connectors to shared databases, Secret Manager for API keys.</li>
+<li><strong>Data Processing:</strong> Cloud Run jobs for ETL batch workloads with retry policies and parallelism.</li>
+<li><strong>API Backends:</strong> Authenticated APIs with custom domains, auto-scaling to handle traffic spikes, VPC connectivity for database access.</li>
+<li><strong>Event-Driven:</strong> Scale-to-zero services triggered by Pub/Sub, Eventarc, or Cloud Scheduler for cost-efficient event processing.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>Production Readiness Checklist</h2>
+<ul class="checklist">
+<li>Set <code>min_instance_count >= 1</code> for latency-sensitive services to avoid cold starts</li>
+<li>Assign dedicated service accounts with least-privilege IAM roles</li>
+<li>Use Secret Manager for all sensitive environment variables</li>
+<li>Configure VPC Access Connector for private database and API connectivity</li>
+<li>Set <code>ingress = "INGRESS_TRAFFIC_INTERNAL_AND_CLOUD_LOAD_BALANCING"</code> for internal services</li>
+<li>Disable <code>allow_unauthenticated</code> unless the service is a public API</li>
+<li>Set appropriate CPU/memory limits based on load testing</li>
+<li>Configure meaningful labels for cost tracking and resource organization</li>
+<li>Set <code>max_instance_count</code> to prevent runaway scaling costs</li>
+<li>Configure appropriate timeouts for service and job workloads</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>Configuration Reference</h2>
+<h3>Required Variables</h3>
+<table>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>project_id</code></td><td>string</td><td>GCP project ID</td></tr>
+</table>
+<h3>Key Optional Variables</h3>
+<table>
+<tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>region</code></td><td>string</td><td>us-central1</td><td>GCP region</td></tr>
+<tr><td><code>services</code></td><td>map(object)</td><td>{}</td><td>Cloud Run v2 service definitions</td></tr>
+<tr><td><code>jobs</code></td><td>map(object)</td><td>{}</td><td>Cloud Run v2 job definitions</td></tr>
+<tr><td><code>vpc_connectors</code></td><td>map(object)</td><td>{}</td><td>VPC Access Connector definitions</td></tr>
+<tr><td><code>labels</code></td><td>map(string)</td><td>{}</td><td>Default labels for all resources</td></tr>
+</table>
+<h3>Outputs</h3>
+<table>
+<tr><th>Name</th><th>Description</th></tr>
+<tr><td><code>service_urls</code></td><td>Map of service names to URLs</td></tr>
+<tr><td><code>service_ids</code></td><td>Map of service names to IDs</td></tr>
+<tr><td><code>job_ids</code></td><td>Map of job names to IDs</td></tr>
+<tr><td><code>vpc_connector_ids</code></td><td>Map of VPC connector names to IDs</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Deployment</h2>
+<pre><code>module "cloud_run" {
+  source = "github.com/kogunlowo123/terraform-gcp-cloud-run"
+
+  project_id = "my-project"
+  region     = "us-central1"
+
+  vpc_connectors = {
+    "main-connector" = {
+      network       = "projects/my-project/global/networks/default"
+      ip_cidr_range = "10.8.0.0/28"
+    }
+  }
+
+  services = {
+    "my-api" = {
+      image              = "us-central1-docker.pkg.dev/my-project/repo/api:v1"
+      cpu                = "2000m"
+      memory             = "1Gi"
+      min_instance_count = 1
+      max_instance_count = 10
+      service_account    = "api-sa@my-project.iam.gserviceaccount.com"
+      vpc_connector      = "main-connector"
+      env_vars           = { LOG_LEVEL = "info" }
+      secret_env_vars    = {
+        DB_PASSWORD = { secret = "db-password", version = "latest" }
+      }
+      allow_unauthenticated = false
+    }
+  }
+
+  jobs = {
+    "nightly-etl" = {
+      image       = "us-central1-docker.pkg.dev/my-project/repo/etl:v1"
+      task_count  = 5
+      max_retries = 2
+      timeout     = "1800s"
+    }
+  }
+
+  labels = { team = "platform", env = "production" }
+}</code></pre>
+</div>
+
+<div class="section">
+<h2>Links</h2>
+<ul>
+<li><a href="https://cloud.google.com/run/docs">Cloud Run Documentation</a></li>
+<li><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service">Terraform google_cloud_run_v2_service</a></li>
+<li><a href="https://cloud.google.com/run/docs/configuring/vpc-connectors">VPC Access Connectors</a></li>
+<li><a href="../README.md">Module README</a></li>
+</ul>
+</div>
+
+<div class="footer">
+<p>terraform-gcp-cloud-run &middot; Architecture Document &middot; Generated 2026-03-15</p>
+<p style="color:#333;margin-top:0.3rem">Built for Google Cloud Platform</p>
+</div>
+</div>
+</body>
+</html>
