@@ -27,7 +27,7 @@ resource "google_cloud_run_v2_service" "this" {
   name     = each.key
   location = var.region
   ingress  = each.value.ingress
-  labels   = merge(local.default_labels, each.value.labels)
+  labels   = merge(var.labels, each.value.labels)
 
   template {
     service_account                  = each.value.service_account
@@ -108,7 +108,7 @@ resource "google_cloud_run_v2_job" "this" {
   project  = var.project_id
   name     = each.key
   location = var.region
-  labels   = merge(local.default_labels, each.value.labels)
+  labels   = merge(var.labels, each.value.labels)
 
   template {
     task_count  = each.value.task_count
