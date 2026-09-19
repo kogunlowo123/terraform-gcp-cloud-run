@@ -21,7 +21,7 @@ module "test" {
       ingress            = "INGRESS_TRAFFIC_ALL"
 
       env_vars = {
-        APP_ENV  = "test"
+        APP_ENV   = "test"
         LOG_LEVEL = "info"
       }
 

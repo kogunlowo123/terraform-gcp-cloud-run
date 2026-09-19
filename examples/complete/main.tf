@@ -18,14 +18,14 @@ module "cloud_run" {
   # Cloud Run Services
   services = {
     "api-service" = {
-      image              = "gcr.io/my-gcp-project/api:latest"
-      port               = 8080
-      cpu                = "2000m"
-      memory             = "1Gi"
-      min_instance_count = 1
-      max_instance_count = 50
-      ingress            = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
-      service_account    = "api-sa@my-gcp-project.iam.gserviceaccount.com"
+      image                 = "gcr.io/my-gcp-project/api:latest"
+      port                  = 8080
+      cpu                   = "2000m"
+      memory                = "1Gi"
+      min_instance_count    = 1
+      max_instance_count    = 50
+      ingress               = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+      service_account       = "api-sa@my-gcp-project.iam.gserviceaccount.com"
       allow_unauthenticated = false
       env_vars = {
         ENV       = "production"
